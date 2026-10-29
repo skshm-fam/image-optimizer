@@ -1,65 +1,58 @@
 
-# 📦 Image Optimizer CLI (SVG + WebP)
+# Image Optimizer CLI
 
-A simple interactive CLI tool to scan, select, and compress large `.svg` and `.webp` assets in your project.
-
----
-
-## 🚀 Features
-
-* 🔍 Scans directory recursively
-* 📏 Filters only images **> 50 KB**
-* ✅ Interactive checkbox selection (space to toggle)
-* ⚙️ Custom compression settings:
-
-  * WebP quality
-  * Resize width / height
-* 🛠 Uses:
-
-  * `svgo` for SVG optimization
-  * `cwebp` for WebP compression
+An interactive CLI tool to scan, select, and compress or convert image assets in your project.
 
 ---
 
-## 🧰 Prerequisites
+## Features
 
-Make sure you have the following installed:
+* Scans directory recursively
+* Filters SVG/WebP files **> 50 KB** for optimization
+* Converts PNG/JPEG/JPG/WebP to **WebP** or **AVIF**
+* Interactive checkbox file selection
+* Custom compression settings (quality, width, height) shared across both workflows
+* Uses `svgo` for SVG, `cwebp` for WebP compression, and Pillow as a fallback for conversion
 
-### 1. Python (>= 3.7)
+---
 
-Check:
+## Prerequisites
+
+### Python >= 3.7
 
 ```bash
 python3 --version
 ```
 
----
+### Python dependencies (virtual environment)
 
-### 2. Install Python dependency
+Install dependencies into a project-local venv so the script doesn't break when
+the system/Homebrew Python changes:
 
 ```bash
-pip install inquirer
+python3 -m venv .venv
+.venv/bin/pip install inquirer pillow
 ```
 
----
+Pillow 11.3+ supports AVIF natively — no extra plugin needed.
 
-### 3. Install SVGO (for SVG optimization)
+### ffmpeg (AVIF conversion, optional)
+
+Used first for AVIF encoding (falls back to Pillow if unavailable):
+
+```bash
+brew install ffmpeg
+```
+
+### SVGO (SVG optimization)
 
 ```bash
 npm install -g svgo
 ```
 
-Check:
+### cwebp (WebP compression/conversion)
 
-```bash
-svgo --version
-```
-
----
-
-### 4. Install WebP tools (`cwebp`)
-
-#### macOS (Homebrew):
+#### macOS:
 
 ```bash
 brew install webp
@@ -71,163 +64,138 @@ brew install webp
 sudo apt install webp
 ```
 
-#### Verify:
-
-```bash
-cwebp -version
-```
-
 ---
 
-## 📁 Setup
-
-1. Save the script as:
-
-```
-image_optimizer.py
-```
-
-2. Give execution permission (optional):
+## Usage
 
 ```bash
-chmod +x image_optimizer.py
+.venv/bin/python image_optimizer.py
 ```
 
----
-
-## ▶️ Running the Script
+Or activate the venv first:
 
 ```bash
+source .venv/bin/activate
 python image_optimizer.py
 ```
 
+Optional shell alias (add to `~/.zshrc`):
+
+```bash
+alias run-img-optimizer="~/build/image_optimizer/.venv/bin/python ~/build/image_optimizer/image_optimizer.py"
+```
+
 ---
 
-## 🧭 Step-by-Step Usage
+## Workflow
 
 ### 1. Enter directory path
 
-Example:
-
 ```
-/Users/yourname/project/assets
+Enter directory path: /Users/yourname/project/assets
 ```
 
----
+### 2. Select SVG/WebP files to optimize (> 50 KB)
 
-### 2. Select files to optimize
+If any files over 50 KB are found, a checkbox list appears.
 
-* Use **↑ / ↓ arrow keys** to navigate
-* Press **SPACE** to select/deselect
-* Press **ENTER** to confirm
+* **↑ / ↓** — navigate
+* **SPACE** — select/deselect
+* **ENTER** — confirm
 
----
+If none are found, this step is skipped automatically.
 
 ### 3. Enter compression settings
 
-You’ll be prompted for:
+These settings apply to both optimization and conversion:
 
-#### 🔸 WebP Quality
+* **Quality** (0–100, default 75) — compression level
+* **Width** — resize width in px, leave blank to skip
+* **Height** — resize height in px, leave blank to auto-scale
 
-* Range: `0–100`
-* Recommended: `70–75`
+### 4. Optimization runs
 
-#### 🔸 Resize Width (optional)
+* SVG → optimized with `svgo`
+* WebP → re-compressed with `cwebp`
 
-* Example: `512`
-* Leave blank to skip
+Files are replaced in-place.
 
-#### 🔸 Resize Height (optional)
+### 5. Convert PNG/JPEG/JPG/WebP files
 
-* Example: `512`
-* Leave blank to auto-scale
-
----
-
-### 4. Optimization starts
-
-* SVG → optimized using `svgo`
-* WebP → compressed using `cwebp`
-
-Files are **replaced in-place**
-
----
-
-## ⚠️ Important Notes
-
-* ⚠️ Original files are overwritten
-* SVG optimization depends on structure (some may not shrink much)
-* WebP compression is **lossy** if quality < 100
-* Resize is optional but gives biggest size reduction
-
----
-
-## 💡 Tips
-
-* Use `quality = 70` for best balance
-* Resize oversized images (huge impact)
-* Run this on your entire asset folder before release
-
----
-
-## 🧪 Example Workflow
-
-```bash
-python image_optimizer.py
-```
+All matching files in the directory are listed. You are asked:
 
 ```
-Enter directory path:
-/assets/images
+Convert PNG/JPEG/JPG/WebP files to
+  > webp
+    avif
+    none (skip)
+```
 
-[Select files with SPACE]
+Select files via checkbox, then conversion runs using the quality/width/height from step 3.
 
-WebP Quality: 75
+**Note:** If you select **webp**, any `.webp` files already in WebP format are automatically skipped. If you select **avif**, `.webp` files are included and converted.
+
+---
+
+## Example
+
+```
+Enter directory path: /assets/images
+
+[Select SVG/WebP files > 50KB with SPACE]
+
+Quality: 75
 Width: 512
 Height:
 
-→ Optimization complete ✅
+Starting optimization...
+Optimized WebP: /assets/images/banner.webp
+
+Found 4 PNG/JPEG/JPG/WebP file(s).
+Convert to: avif
+
+[Select files with SPACE]
+
+Converting to AVIF...
+Converted: /assets/images/icon.png -> /assets/images/icon.avif
+Converted: /assets/images/hero.jpg -> /assets/images/hero.avif
+
+Done!
 ```
 
 ---
 
-## 🛠 Troubleshooting
+## Troubleshooting
 
-### ❌ `svgo: command not found`
-
+**`svgo: command not found`**
 ```bash
 npm install -g svgo
 ```
 
----
-
-### ❌ `cwebp: command not found`
-
-Install WebP tools:
-
+**`cwebp: command not found`**
 ```bash
-brew install webp
+brew install webp   # macOS
+sudo apt install webp   # Ubuntu
+```
+
+**`Install dependency: pip install inquirer`** / **`No module named inquirer`**
+
+You're running a Python that doesn't have the dependencies (e.g. after a Homebrew
+Python upgrade). Run via the venv, or recreate it:
+```bash
+rm -rf .venv && python3 -m venv .venv && .venv/bin/pip install inquirer pillow
+```
+
+**AVIF conversion fails**
+```bash
+brew install ffmpeg
+.venv/bin/pip install -U pillow   # Pillow 11.3+ has built-in AVIF
 ```
 
 ---
 
-### ❌ `No module named inquirer`
+## Notes
 
-```bash
-pip install inquirer
-```
-
----
-
-## 🔥 Future Improvements (optional)
-
-* Auto-compress until file < 50 KB
-* Backup originals before replacing
-* Parallel processing for speed
-* Git pre-commit hook integration
-
----
-
-## 👌 You're good to go
-
-Run it on your Flutter assets and you should see **significant size reduction immediately**.
+* Original files are overwritten — back them up if needed
+* WebP/AVIF compression is lossy when quality < 100
+* Resizing gives the largest file size reduction
